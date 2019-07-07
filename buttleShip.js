@@ -5,12 +5,12 @@ var view={
         var messageArea=document.getElementById("messageArea");
         messageArea.innerHTML=msg;
     },
-    displayMiss: function(location) {
-        var cell=document.getElementById(location);
+    displayMiss: function(locations) {
+        var cell=document.getElementById(locations);
         cell.setAttribute("class", "miss");
     },
-    dispalyHit: function(location){
-        var cell=document.getElementById(location);
+    dispalyHit: function(locations){
+        var cell=document.getElementById(locations);
         cell.setAttribute("class", "hit");
     }
 };
@@ -21,18 +21,18 @@ var model = {
     shipLength: 3,
     shipSunk: 0,    //count потоаленых кораблей
 
-    ships: [{location:["","",""], hits: ["","",""]},
-            {location:["","",""], hits: ["","",""]}, 
-            {location:["","",""], hits: ["","",""]}],
+    ships: [{locations:[0,0,0], hits: ["","",""]},
+            {locations:[0,0,0], hits: ["","",""]}, 
+            {locations:[0,0,0], hits: ["","",""]}],
 
 
     fire: function(guess) {
                 for (var i = 0; i < this.numShips; i++) {
                     var ship = this.ships[i];
-                    var index = ship.location.indexOf(guess);
+                    var index = ship.locations.indexOf(guess);
         
                     if (ship.hits[index] === "hit") {
-                        view.displayMessage("Oops, you already hit that location!");
+                        view.displayMessage("Oops, you already hit that locations!");
                         return true;
                     } else if (index >= 0) {
                         ship.hits[index] = "hit";
@@ -59,7 +59,51 @@ var model = {
             }
             return true;
         },
- 
+
+        generateShipslocations: function(){
+            var locations;
+            for (var i=0;i<this.numShips;i++){
+                do{
+                    locations=this.generateShip();
+                } while (this.collision(locations));
+            this.ships[i].locations=locations;
+
+            }
+        },
+
+        generateShip: function(){
+            var direction = Math.floor(Math.random()*2);
+            var row, col;
+        
+            if (direction===1){
+                row=Math.floor(Math.random()*this.boardSize);
+                col=Math.floor(Math.random()*(this.boardSize-this.shipLength));
+            } else{
+                row=Math.floor(Math.random()*(this.boardSize-this.shipLength));
+                col=Math.floor(Math.random()*this.boardSize);
+            }
+            var newShiplocations=[];
+        for(var i=0; i<this.shipLength;i++){
+            if (direction===1){
+                newShiplocations.push(row+''+(col+i));
+            }else{
+                newShiplocations.push((row+i)+''+col);
+            }
+        }
+        return newShiplocations;
+        },
+
+    collision: function(locations){
+        for(var i=0;i<this.numShips;i++){
+            var ship=model.ships[i];
+            for(var j=0; j<locations.lengthl;j++){
+                if(ship.locations.indexOf(locations[j])>=0){
+                    return true;
+                }
+            }
+        }
+    return false;
+    }
   
 };
 
@@ -68,10 +112,10 @@ var controller={
     guesses: 0, //кол-выстрелов игрока
 
     processGuess: function(guess){
-        var location=parseGuess(guess);
-        if(location){
+        var locations=parseGuess(guess);
+        if(locations){
             this.guesses++;
-            var hit=model.fire(location);
+            var hit=model.fire(locations);
             if(hit && model.shipSunk===model.numShips){
                 view.dispalyMessage("You sank all my battleships, in "+this.guesses+"guess"); 
             }
@@ -101,6 +145,9 @@ function parseGuess(guess) {
 	return null;
 }
 
+
+
+
 function handleFireButton(){
  var guessInput=document.getElementById("guessInput");
  var guess=guessInput.value;
@@ -113,6 +160,7 @@ function init(){
 var fireButton=document.getElementById("fireButton");
 fireButton.onclick=handleFireButton;
 
+model.generateShipslocations();
 }
 
 window.onload=init;
